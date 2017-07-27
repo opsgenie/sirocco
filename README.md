@@ -9,7 +9,7 @@ Binaries are available from [Maven Central](http://search.maven.org/#search%7Cga
 
 |Group|Artifact|Latest Stable Version|
 |-----------|---------------|---------------------|
-|com.opsgenie|sirocco-*|[![Maven Central](https://img.shields.io/maven-central/v/com.opsgenie.sirocco/sirocco-oss-parent.svg)]()|
+|com.opsgenie.sirocco|sirocco-*|[![Maven Central](https://img.shields.io/maven-central/v/com.opsgenie.sirocco/sirocco-oss-parent.svg)]()|
 
 Below are the various artifacts published:
 
