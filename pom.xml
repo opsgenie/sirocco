@@ -14,6 +14,12 @@
         <connection>scm:git:git@github.com:opsgenie/sirocco.git</connection>
         <url>https://github.com/opsgenie/sirocco</url>
     </scm>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
     <developers>
         <developer>
             <id>serkan</id>
@@ -237,7 +243,7 @@
 
     <profiles>
         <profile>
-            <id>release-maven-central</id>
+            <id>release</id>
             <properties>
                 <javadoc>true</javadoc>
             </properties>
