@@ -1,0 +1,2 @@
+com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategy
+com.opsgenie.sirocco.warmup.strategy.impl.StatAwareWarmupStrategy

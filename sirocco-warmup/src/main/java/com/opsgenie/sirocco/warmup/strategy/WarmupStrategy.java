@@ -1,0 +1,35 @@
+package com.opsgenie.sirocco.warmup.strategy;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import com.opsgenie.sirocco.warmup.LambdaService;
+import com.opsgenie.sirocco.warmup.WarmupFunctionInfo;
+
+import java.util.Map;
+
+/**
+ * Interface for implementations which execute warmup action for the given AWS Lambda functions.
+ *
+ * @author serkan
+ */
+public interface WarmupStrategy {
+
+    /**
+     * Gets the unique name of this strategy.
+     *
+     * @return the unique name of this strategy
+     */
+    String getName();
+
+    /**
+     * Executes warmup action
+     *
+     * @param context           the {@link Context Lambda context}
+     * @param lambdaService     the {@link LambdaService Lambda service}
+     *                          to be used for Lambda related operations
+     * @param functionsToWarmup Lambda function to warmup
+     */
+    void warmup(Context context,
+                LambdaService lambdaService,
+                Map<String, WarmupFunctionInfo> functionsToWarmup);
+
+}
