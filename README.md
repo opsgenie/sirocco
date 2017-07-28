@@ -3,6 +3,10 @@
 [![License](https://img.shields.io/github/license/opsgenie/sirocco.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Lifecycle](https://img.shields.io/osslifecycle/opsgenie/sirocco.svg)]()
 
+Sirocco, which is a character from Aladdin http://aladdin.wikia.com/wiki/Sirocco, is Java based Lambda infrastructure developed by [OpsGenie](www.opsgenie.com) as in-house framework. It has many unique features for AWS Lambda platform such as distributed/embedded monitoring (audit + stat + log), instrumentation, profiling, control requests, warmup, discovery, error handling/etrying over DLQ, etc ... 
+
+This repository includes open-sourced modules of Sirocco. However, some parts are not open-sourced and used internally by OpsGenie's AWS Lambda based serverless infrastructure and products. 
+
 ## Get Sirocco
 
 Binaries are available from [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ccom.opsgenie.sirocco).
