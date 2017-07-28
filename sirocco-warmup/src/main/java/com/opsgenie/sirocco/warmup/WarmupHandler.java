@@ -33,7 +33,8 @@ import java.util.*;
  *      <ul>
  *          <li>
  *              <code>lambda:InvokeFunction</code>:
- *              This permission is needed for invoking functions to warmup</li>
+ *              This permission is needed for invoking functions to warmup
+ *          </li>
  *          <li>
  *              <code>lambda:ListAliases</code>:
  *              This permission is needed when the alias discovery is used (enabled by default)
@@ -95,7 +96,7 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
      * to be used for discovering group name configuration
      * of Lambda functions to warmup.
      * If a Lambda function has different group name than
-     * this handler's group name (specified by #WARMUP_GROUP_NAME_PROP_NAME),
+     * this handler's group name (specified by {@link #WARMUP_GROUP_NAME_PROP_NAME}),
      * it is not discovered and warmed-up.
      */
     public static final String WARMUP_GROUP_NAME_ENV_VAR_NAME =
@@ -106,7 +107,7 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
      * If warmup group name is specified by this property for this handler,
      * this handler only discovers and warms-up
      * Lambda functions in the same warmup group
-     * (having same warmup group name specified by #WARMUP_GROUP_NAME_ENV_VAR_NAME).
+     * (having same warmup group name specified by {@link #WARMUP_GROUP_NAME_ENV_VAR_NAME}).
      */
     public static final String WARMUP_GROUP_NAME_PROP_NAME =
             "sirocco.warmup.groupName";

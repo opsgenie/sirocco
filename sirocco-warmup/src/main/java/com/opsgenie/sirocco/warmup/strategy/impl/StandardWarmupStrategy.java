@@ -45,7 +45,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
     public static final int DEFAULT_INVOCATION_COUNT = 8;
 
     /**
-     * Name of the <code>integer</code> typed property name
+     * Name of the <code>integer</code> typed property
      * which configures the count of consumers
      * to get results of warmup invocations.
      */
@@ -120,11 +120,10 @@ public class StandardWarmupStrategy implements WarmupStrategy {
 
     /**
      * Name of the <code>boolean</code> typed property
-     * which enables waiting behaviour between each warmup invocation round.
-     * This property is active by default.
+     * which disables waiting behaviour between each warmup invocation round.
      */
-    public static final String WAIT_BETWEEN_INVOCATION_ROUNDS =
-            "sirocco.warmup.waitBetweenInvocationRounds";
+    public static final String DONT_WAIT_BETWEEN_INVOCATION_ROUNDS =
+            "sirocco.warmup.dontWaitBetweenInvocationRounds";
 
     protected final Logger logger = Logger.getLogger(getClass());
 
@@ -137,7 +136,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
     protected final boolean disableRandomization;
     protected final String warmupFunctionAlias;
     protected final boolean throwErrorOnFailure;
-    protected final boolean waitBetweenInvocationRounds;
+    protected final boolean dontWaitBetweenInvocationRounds;
 
     protected final Map<String, Long> functionCallTimes = new HashMap<String, Long>();
     protected final ExecutorService executorService;
@@ -171,8 +170,8 @@ public class StandardWarmupStrategy implements WarmupStrategy {
                 warmupPropertyProvider.getString(WARMUP_FUNCTION_ALIAS_PROP_NAME);
         this.throwErrorOnFailure =
                 warmupPropertyProvider.getBoolean(THROW_ERROR_ON_FAILURE_PROP_NAME);
-        this.waitBetweenInvocationRounds =
-                warmupPropertyProvider.getBoolean(WAIT_BETWEEN_INVOCATION_ROUNDS, true);
+        this.dontWaitBetweenInvocationRounds =
+                warmupPropertyProvider.getBoolean(DONT_WAIT_BETWEEN_INVOCATION_ROUNDS);
         this.executorService =
                 Executors.newFixedThreadPool(invocationResultConsumerCount);
     }
@@ -319,7 +318,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
                 }
 
                 // No need to sleep at last round
-                if (i < iterationCount - 1) {
+                if (i < iterationCount - 1 && !dontWaitBetweenInvocationRounds) {
                     long passedTime = System.currentTimeMillis() - startTime;
                     long iterationRemainingMillis = iterationDurationMillis - passedTime;
                     try {
