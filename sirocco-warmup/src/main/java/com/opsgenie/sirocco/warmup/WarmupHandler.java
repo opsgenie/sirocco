@@ -23,9 +23,29 @@ import org.apache.log4j.Logger;
 import java.util.*;
 
 /**
- * AWS Lambda {@link RequestHandler} implementation which
- * triggers warmup action through {@link WarmupStrategy}s
- * for configured/discovered functions.
+ * <p>
+ *      AWS Lambda {@link RequestHandler} implementation which
+ *      triggers warmup action through {@link WarmupStrategy}s
+ *      for configured/discovered functions.
+ * </p>
+ * <p>
+ *      This handler needs some permissions to do its job.
+ *      <ul>
+ *          <li>
+ *              <code>lambda:InvokeFunction</code>:
+ *              This permission is needed for invoking functions to warmup</li>
+ *          <li>
+ *              <code>lambda:ListAliases</code>:
+ *              This permission is needed when the alias discovery is used (enabled by default)
+ *              for invoking functions by using alias as qualifier to warmup.
+ *          </li>
+ *          <li>
+ *              <code>lambda:ListFunctions</code>:
+ *              This permission is needed when any configuration discovery is used (enabled by default)
+ *              for retrieving configurations of functions to warmup.
+ *          </li>
+ *      </ul>
+ * </p>
  *
  * @author serkan
  */
