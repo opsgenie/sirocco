@@ -29,6 +29,14 @@ This strategy invokes with empty warmup messages if no invocation data is specif
 
 This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. In here `<wait_time>` is the additional delay time for the invoked target Lambda functions to wait before return. In here the strategy itself calculates `<wait_time>` by adding **extra** `100 milliseconds` for every **extra** `10` concurrent warmup invocation count. So, it suggested to wait `100 + <wait_time> milliseconds` for warmup requests at the target Lambda function side.
 
+As mentioned above, this strategy is smart enough to scale up/down warmup invocation counts according to target Lambda function usage stats. By this feature, hot functions are invoked with higher concurrent warmup invocation count by automatically increasing invocation count from standard/defined invocation count. The opposite logic is valid of cold functions by warming-up them lower concurrent warmup invocation count by automatically decreasing invocation count. To take advantage of this feature (note that this feature is optional, so in case of empty/null return value, auto scale feature is not used and goes on with standard invocation count as in `com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategy`), target Lambda function should return an `instanceId` unique to the Lambda handler instance (ex. a random generated UUID for the Lambda handler instane) and `latestRequestTime` which represents the latest request (not empty/warmup message) time in `yyyy-MM-dd HH:mm:ss.SSS` format as JSON like below:
+``` json
+{
+  "instanceId": "9b3ba0d0-d515-4a21-b3ee-133a321d9dbe",
+  "latestRequestTime": "2017-07-30 17:26:27.778"
+}
+```
+
 #### StrategyAwareWarmupStrategy
 
 `com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s for functions into consideration while warming-up. Name of this strategy is `strategy-aware`. If there is no configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s, uses given `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` by default. 
