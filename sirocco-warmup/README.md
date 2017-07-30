@@ -96,8 +96,133 @@ Here are the sample Lambda functions to be warmed-up:
 
 ### Java
 
+Sample request and response:
 ``` java
+public class MyAwasomeRequest {
 
+    private String requestId;
+    private String description;
+
+    // ...
+
+    // Getters and setters ...
+    
+}    
+
+public class MyAwasomeResponse {
+
+    private String responseId;
+
+    // ...
+
+    // Getters and setters ...
+    
+} 
+```
+
+#### RequestHandler implementation
+
+``` java
+public class MyAwasomeRequestHandler
+        implements RequestHandler<MyAwasomeRequest, MyAwasomeResponse> {
+
+    private boolean checkAndHandleWarmupRequest(MyAwasomeRequest request, Context context) {
+        // Check whether it is empty request which is used as default warmup request
+        if (StringUtils.isNullOrEmpty(request.getRequestId())
+            && 
+            StringUtils.isNullOrEmpty(request.getDescription())) {
+            context.getLogger().log("Received warmup request as empty message. " +
+                                    "Handling with 100 milliseconds delay ...");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public MyAwasomeResponse handleRequest(MyAwasomeRequest request, Context context) {
+        if (!checkAndHandleWarmupRequest(request, context)) {
+            return doHandleRequest(request, context);
+        } else {
+            return null;
+        }
+    }
+
+    private MyAwasomeResponse doHandleRequest(MyAwasomeRequest request, Context context) {
+        // TODO My awesome logic
+
+        return new MyAwasomeResponse().setResponseId(UUID.randomUUID().toString());
+    }
+
+}
+```
+
+#### RequestStreamHandler implementation
+
+``` java
+public class MyAwasomeRequestStreamHandler implements RequestStreamHandler {
+
+    private static final Pattern WARMUP_PATTERN = Pattern.compile("#warmup (wait=(\\d+))?");
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private boolean checkAndHandleWarmupRequest(InputStream input, Context context) throws IOException {
+        // Check whether it is empty request which is used as default warmup request
+        if (input.available() <= 3) {
+            context.getLogger().log("Received warmup request as empty message. " +
+                                    "Handling with 100 milliseconds delay ...");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            return true;
+        } else {
+            long delayTime = 100;
+            Scanner scanner = new Scanner(input);
+            String match = scanner.findWithinHorizon(WARMUP_PATTERN, 0);
+            // Check whether it is warmup request
+            if (match != null) {
+                MatchResult matchResult = scanner.match();
+                // Check whether "wait" argument is provided
+                // to specify extra wait time before returning from request
+                if (matchResult.groupCount() == 2) {
+                    long waitTime = Long.parseLong(matchResult.group(2));
+                    delayTime += waitTime;
+                }
+                context.getLogger().log("Received warmup request as warmup message. " +
+                                        "Handling with " + delayTime + " milliseconds delay ...");
+                try {
+                    Thread.sleep(delayTime);
+                } catch (InterruptedException e) {
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        BufferedInputStream bis = new BufferedInputStream(input);
+        bis.mark(Integer.MAX_VALUE);
+        if (!checkAndHandleWarmupRequest(bis, context)) {
+            bis.reset();
+            MyAwasomeRequest request = objectMapper.readValue(bis, MyAwasomeRequest.class);
+            MyAwasomeResponse response = doHandleRequest(request, context);
+            objectMapper.writeValue(output, response);
+        }
+    }
+
+    private MyAwasomeResponse doHandleRequest(MyAwasomeRequest request, Context context) {
+        // TODO My awesome logic
+
+        return new MyAwasomeResponse().setResponseId(UUID.randomUUID().toString());
+    }
+
+}
 ```
 
 ### NodeJS
