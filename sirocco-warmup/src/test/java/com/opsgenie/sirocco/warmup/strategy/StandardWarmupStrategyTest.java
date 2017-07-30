@@ -10,6 +10,7 @@ import com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategy;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +39,8 @@ public class StandardWarmupStrategyTest {
     }
 
     @Test
-    public void shouldWarmupSuccessfully() throws ExecutionException, InterruptedException {
+    public void shouldWarmupSuccessfully()
+            throws IOException, ExecutionException, InterruptedException {
         Map<String, Object> warmupPropertyMap = new HashMap<String, Object>();
         warmupPropertyMap.put(ITERATION_COUNT_PROP_NAME, 1);
         StandardWarmupStrategy standardWarmupStrategy =
@@ -57,7 +59,8 @@ public class StandardWarmupStrategyTest {
     }
 
     @Test
-    public void shouldThrowErrorWhileWarmupIfThereIsError() throws ExecutionException, InterruptedException {
+    public void shouldThrowErrorWhileWarmupIfThereIsError()
+            throws IOException, ExecutionException, InterruptedException {
         Map<String, Object> warmupPropertyMap = new HashMap<String, Object>();
         warmupPropertyMap.put(ITERATION_COUNT_PROP_NAME, 1);
         StandardWarmupStrategy standardWarmupStrategy =

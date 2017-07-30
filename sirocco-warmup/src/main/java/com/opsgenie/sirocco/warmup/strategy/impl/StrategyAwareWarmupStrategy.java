@@ -1,10 +1,12 @@
 package com.opsgenie.sirocco.warmup.strategy.impl;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.opsgenie.core.util.ExceptionUtil;
 import com.opsgenie.sirocco.warmup.LambdaService;
 import com.opsgenie.sirocco.warmup.WarmupFunctionInfo;
 import com.opsgenie.sirocco.warmup.strategy.WarmupStrategy;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +19,9 @@ import java.util.concurrent.Future;
 /**
  * {@link WarmupStrategy} implementation which
  * takes configured/specified {@link WarmupStrategy}s for functions into consideration
- * while warmup. If there is no configured/specified {@link WarmupStrategy}s,
+ * while warming-up. If there is no configured/specified {@link WarmupStrategy}s,
  * uses given {@link WarmupStrategy} by default.
+ * Name of this strategy is <code>strategy-aware</code> ({@link #NAME}.
  *
  * @author serkan
  */
@@ -45,7 +48,7 @@ public class StrategyAwareWarmupStrategy implements WarmupStrategy {
     @Override
     public void warmup(Context context,
                        LambdaService lambdaService,
-                       Map<String, WarmupFunctionInfo> functionsToWarmup) {
+                       Map<String, WarmupFunctionInfo> functionsToWarmup) throws IOException {
         Map<String, WarmupFunctionInfo> functionsToWarmupByDefault =
                 new HashMap<String, WarmupFunctionInfo>();
         Map<WarmupStrategy, Map<String, WarmupFunctionInfo>> functionsToWarmupByStrategy =
@@ -92,7 +95,11 @@ public class StrategyAwareWarmupStrategy implements WarmupStrategy {
                     executorService.submit(new Runnable() {
                         @Override
                         public void run() {
-                            warmupStrategy.warmup(context, lambdaService, functionsToWarmupByDefault);
+                            try {
+                                warmupStrategy.warmup(context, lambdaService, functionsToWarmupByDefault);
+                            } catch (IOException e) {
+                                ExceptionUtil.sneakyThrow(e);
+                            }
                         }
                     });
             futures.add(future);
@@ -106,7 +113,11 @@ public class StrategyAwareWarmupStrategy implements WarmupStrategy {
                     executorService.submit(new Runnable() {
                         @Override
                         public void run() {
-                            warmupStrategy.warmup(context, lambdaService, functionInfoMap);
+                            try {
+                                warmupStrategy.warmup(context, lambdaService, functionInfoMap);
+                            } catch (IOException e) {
+                                ExceptionUtil.sneakyThrow(e);
+                            }
                         }
                     });
             futures.add(future);

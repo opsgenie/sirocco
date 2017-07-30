@@ -10,6 +10,7 @@ import com.opsgenie.aws.core.property.AwsPropertyAccessors;
 import com.opsgenie.core.initialize.EnvironmentInitializerManager;
 import com.opsgenie.core.instance.InstanceProvider;
 import com.opsgenie.core.instance.InstanceScope;
+import com.opsgenie.core.util.ExceptionUtil;
 import com.opsgenie.sirocco.api.util.LambdaUtil;
 import com.opsgenie.sirocco.warmup.impl.SdkLambdaService;
 import com.opsgenie.sirocco.warmup.impl.SystemPropertyWarmupPropertyProvider;
@@ -20,6 +21,7 @@ import com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategyProvider;
 import com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -28,25 +30,23 @@ import java.util.*;
  *      triggers warmup action through {@link WarmupStrategy}s
  *      for configured/discovered functions.
  * </p>
- * <p>
- *      This handler needs some permissions to do its job.
- *      <ul>
- *          <li>
- *              <code>lambda:InvokeFunction</code>:
- *              This permission is needed for invoking functions to warmup
- *          </li>
- *          <li>
- *              <code>lambda:ListAliases</code>:
- *              This permission is needed when the alias discovery is used (enabled by default)
- *              for invoking functions by using alias as qualifier to warmup.
- *          </li>
- *          <li>
- *              <code>lambda:ListFunctions</code>:
- *              This permission is needed when any configuration discovery is used (enabled by default)
- *              for retrieving configurations of functions to warmup.
- *          </li>
- *      </ul>
- * </p>
+ * This handler needs some permissions to do its job.
+ * <ul>
+ *      <li>
+ *          <code>lambda:InvokeFunction</code>:
+ *          This permission is needed for invoking functions to warmup
+ *      </li>
+ *      <li>
+ *          <code>lambda:ListAliases</code>:
+ *          This permission is needed when the alias discovery is used (enabled by default)
+ *          for invoking functions by using alias as qualifier to warmup.
+ *      </li>
+ *      <li>
+ *          <code>lambda:ListFunctions</code>:
+ *          This permission is needed when any configuration discovery is used (enabled by default)
+ *          for retrieving configurations of functions to warmup.
+ *      </li>
+ * </ul>
  *
  * @author serkan
  */
@@ -60,7 +60,34 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
     private static final Logger LOGGER = Logger.getLogger(WarmupHandler.class);
 
     /**
-     * Prefix for property names to declare warmup functions and their configurations.
+     * Prefix for property names to declare functions to warmup and their configurations.
+     * Multiple functions and their configurations can be specified with this prefix such as
+     * <code>sirocco.warmup.function1</code>, <code>sirocco.warmup.function2</code>, ...
+     * Besides function definition, configuration specification is also supported as key-value after function definition.
+     * This property is used in <code>sirocco.warmup.function...[conf1=val1;conf2=val2;...]</code> format
+     * by appending configurations in key-value (separated by <code>=</code>) after function definition
+     * between <code>[</code> and <code>]</code> characters and separating each of them by <code>;</code> character.
+     * Note that configuration part is optional. The following configurations are supported through this property:
+     * <ul>
+     *      <li>
+     *          <code>alias</code>:
+     *          Configures alias to be used as qualifier while invoking the defined functions with warmup request.
+     *      <li>
+     *      <li>
+     *          <code>warmupStrategy</code>:
+     *          Configures name of the {@link WarmupStrategy} implementation to be used
+     *          while warming-up the defined function.
+     *      </li>
+     *      <li>
+     *          <code>invocationCount</code>:
+     *          Configures concurrent invocation count for the defined function to warmup.
+     *      </li>
+     *      <li>
+     *          <code>invocationData</code>:
+     *          Configures invocation data to be used as invocation request while warming-up the defined function.
+     *          By default empty message is used.
+     *      </li>
+     * </ul>
      */
     public static final String WARMUP_FUNCTION_DECLARATION_PROP_NAME_PREFIX =
             "sirocco.warmup.function";
@@ -142,7 +169,7 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
     /**
      * Name of the <code>string</code> typed property which
      * configures invocation data to be used as invocation request
-     * while warmup. By default empty message is used.
+     * while warming-up. By default empty message is used.
      */
     public static final String INVOCATION_DATA_PROP_NAME =
             "sirocco.warmup.invocationData";
@@ -310,7 +337,7 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
         this.disableAliasDiscovery =
                 warmupPropertyProvider.getBoolean(DISABLE_ALIAS_DISCOVERY_PROP_NAME);
 
-        LOGGER.info("Using " + getWarmupStartegyName(warmupStrategy) + " as warmup strategy ...");
+        LOGGER.info("Using " + getWarmupStartegyName(warmupStrategy) + " warmup strategy ...");
 
         // Discover registered functions
         for (String propertyName : warmupPropertyProvider.getPropertyNames()) {
@@ -551,7 +578,12 @@ public class WarmupHandler implements RequestHandler<Object, Object> {
         long start = System.currentTimeMillis();
 
         Map<String, WarmupFunctionInfo> functionsToWarmup = getFunctionsToWarmup();
-        warmupStrategy.warmup(context, lambdaService, Collections.unmodifiableMap(functionsToWarmup));
+        try {
+            warmupStrategy.warmup(context, lambdaService, Collections.unmodifiableMap(functionsToWarmup));
+        } catch (IOException e) {
+            LOGGER.error("[ERROR] " + e.getMessage(), e);
+            ExceptionUtil.sneakyThrow(e);
+        }
 
         LOGGER.info("Finished warmup via " + warmupStartegyName +
                     " warmup strategy in " + (System.currentTimeMillis() - start) + " milliseconds");

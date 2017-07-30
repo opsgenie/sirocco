@@ -11,6 +11,7 @@ import com.opsgenie.sirocco.warmup.WarmupPropertyProvider;
 import com.opsgenie.sirocco.warmup.strategy.WarmupStrategy;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,11 +19,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Standard {@link WarmupStrategy} implementation which
- * warmup incrementally as randomized invocation counts
- * for preventing full load on AWS Lambda all the warmup time to
- * leave some AWS Lambda containers free/available for real requests and
- * simulating real environment as much as possible.
+ * <p>
+ *      Standard {@link WarmupStrategy} implementation which
+ *      warmup incrementally as randomized invocation counts
+ *      for preventing full load (all containers are busy with warmup invocations)
+ *      on AWS Lambda during warmup to leave some AWS Lambda containers free/available
+ *      for real requests and simulating real environment as much as possible.
+ *      Name of this strategy is <code>standard</code> ({@link #NAME}.
+ * </p>
+ * <p>
+ *      This strategy invokes with empty warmup messages if no invocation data is specified by
+ *      <code>sirocco.warmup.invocationData</code>. Therefore, the target Lambda functions to warmup
+ *      must handle empty messages. By default it is suggested to wait <code>100 milliseconds</code>
+ *      for warmup requests before return. This is needed for keeping multiple Lambda containers up.
+ *      The reason is that when there is no delay, the invoked Lambda container does its job quickly
+ *      and becomes available to be reused in a very short time. So it is expected that
+ *      multiple warmup invocations are dispatched to the same Lambda container instead of another one.
+ *      By waiting before return, warmup request keep Lambda container busy and therefore,
+ *      possibly the other warmup requests are routed to another containers even create new one
+ *      if there is no available one. If the concurrent warmup invocation count increases, wait time
+ *      at target Lambda function side should be increased accordingly as well. Because delay time
+ *      at target Lambda function side might be insufficient for the required time high number of
+ *      concurrent warmup invocations to keep containers busy in the meantime.
+ *      For every <code>10</code> concurrent invocation, <code>100 milliseconds</code> wait time
+ *      is reasonable by our experiments.
+ * </p>
  *
  * @author serkan
  */
@@ -95,9 +116,9 @@ public class StandardWarmupStrategy implements WarmupStrategy {
      * Name of the <code>boolean</code> typed property
      * which disables randomized invocation count behaviour.
      * Note that invocations counts are randomized
-     * for preventing full load on AWS Lambda all the warmup time to
-     * leave some AWS Lambda containers free/available for real requests and
-     * simulating real environment as much as possible.
+     * for preventing full load (all containers are busy with warmup invocations)
+     * on AWS Lambda during warmup to leave some AWS Lambda containers free/available
+     * for real requests and simulating real environment as much as possible.
      */
     public static final String DISABLE_RANDOMIZATION_PROP_NAME =
             "sirocco.warmup.disableRandomization";
@@ -184,7 +205,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
     @Override
     public void warmup(Context context,
                        LambdaService lambdaService,
-                       Map<String, WarmupFunctionInfo> functionsToWarmup) {
+                       Map<String, WarmupFunctionInfo> functionsToWarmup) throws IOException {
         int defaultInvocationCount = getDefaultInvocationCount();
 
         logger.info("Default invocation count per function: " + defaultInvocationCount);

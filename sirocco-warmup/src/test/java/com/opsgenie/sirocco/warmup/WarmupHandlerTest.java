@@ -11,6 +11,7 @@ import com.opsgenie.sirocco.warmup.strategy.WarmupStrategyProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class WarmupHandlerTest {
     }
 
     @Test
-    public void shouldWarmupSuccessfully() {
+    public void shouldWarmupSuccessfully() throws IOException {
         WarmupStrategyProvider warmupStrategyProvider = mock(WarmupStrategyProvider.class);
         WarmupStrategy warmupStrategy1 = mock(WarmupStrategy.class);
         when(warmupStrategy1.getName()).thenReturn("warmupStrategy1");

@@ -9,6 +9,7 @@ import com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +38,8 @@ public class StrategyAwareWarmupStrategyTest {
     }
 
     @Test
-    public void shouldDelegateToWarmupStrategiesSuccessfully() throws ExecutionException, InterruptedException {
+    public void shouldDelegateToWarmupStrategiesSuccessfully()
+            throws IOException, ExecutionException, InterruptedException {
         WarmupStrategy warmupStrategy1 = mock(WarmupStrategy.class);
         WarmupStrategy warmupStrategy2 = mock(WarmupStrategy.class);
 
@@ -63,7 +65,8 @@ public class StrategyAwareWarmupStrategyTest {
     }
 
     @Test
-    public void shouldThrowErrorsFromDelegatedWarmupStrategiesIfThereAreErrors() throws ExecutionException, InterruptedException {
+    public void shouldThrowErrorsFromDelegatedWarmupStrategiesIfThereAreErrors()
+            throws IOException, ExecutionException, InterruptedException {
         WarmupStrategy warmupStrategy1 = mock(WarmupStrategy.class);
         WarmupStrategy warmupStrategy2 = mock(WarmupStrategy.class);
 

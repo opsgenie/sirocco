@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.opsgenie.sirocco.warmup.LambdaService;
 import com.opsgenie.sirocco.warmup.WarmupFunctionInfo;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -27,9 +28,11 @@ public interface WarmupStrategy {
      * @param lambdaService     the {@link LambdaService Lambda service}
      *                          to be used for Lambda related operations
      * @param functionsToWarmup Lambda function to warmup
+     *
+     * @throws IOException if there is any I/O related exception
      */
     void warmup(Context context,
                 LambdaService lambdaService,
-                Map<String, WarmupFunctionInfo> functionsToWarmup);
+                Map<String, WarmupFunctionInfo> functionsToWarmup) throws IOException;
 
 }

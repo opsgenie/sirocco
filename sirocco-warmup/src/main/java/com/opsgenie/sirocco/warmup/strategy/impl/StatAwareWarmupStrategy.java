@@ -15,13 +15,45 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * {@link WarmupStrategy} implementation which
- * takes Lambda stats into consideration while warmup.
- * If the target Lambda function is hot (invoked frequently),
- * it is aimed to keep more instance of that Lambda function up
- * by warmup it with more concurrent invocation.
+ * <p>
+ *      {@link WarmupStrategy} implementation which
+ *      takes Lambda stats into consideration while warming-up.
+ *      If the target Lambda function is hot (invoked frequently),
+ *      it is aimed to keep more instance of that Lambda function up
+ *      by warmup it with more concurrent invocation.
+ *      Name of this strategy is <code>stat-aware</code> ({@link #NAME}.
+ * </p>
+ * <p>
+ *      This strategy invokes with warmup message in <code>#warmup wait=&lt;wait_time&gt;</code> format.
+ *      In here <code>&lt;wait_time&gt;</code> is the additional delay time for the invoked target Lambda functions
+ *      to wait before return. In here the strategy itself calculates <code>&lt;wait_time&gt;</code>
+ *      by adding <b>extra</b> <code>100 milliseconds</code> for every <b>extra</b>
+ *      <code>10</code> concurrent warmup invocation count. So, it suggested to wait
+ *      <code>100 + &lt;wait_time&gt; milliseconds</code> for warmup requests at the target Lambda function side.
+ * </p>
+ * <p>
+ *      As mentioned above, this strategy is smart enough to scale up/down warmup invocation counts
+ *      according to target Lambda function usage stats. By this feature, hot functions are invoked
+ *      with higher concurrent warmup invocation count by automatically increasing invocation count
+ *      from standard/defined invocation count. The opposite logic is valid of cold functions
+ *      by warming-up them lower concurrent warmup invocation count by automatically decreasing
+ *      invocation count. To take advantage of this feature (note that this feature is optional,
+ *      so in case of empty/null return value, auto scale feature is not used and goes on with standard
+ *      invocation count as in {@link StandardWarmupStrategy}), target Lambda function should return an
+ *      <code>instanceId</code> unique to the Lambda handler instance (ex. a random generated UUID for
+ *      the Lambda handler instance) and <code>latestRequestTime</code>
+ *      which represents the latest request (not empty/warmup message) time in
+ *      <code>`yyyy-MM-dd HH:mm:ss.SSS`</code> format as JSON like below:
+ * </p>
+ * <pre> {@code
+ * {
+ * "instanceId": "9b3ba0d0-d515-4a21-b3ee-133a321d9dbe",
+ * "latestRequestTime": "2017-07-30 17:26:27.778"
+ * }
+ * }</pre>
  *
  * @author serkan
  */
@@ -153,11 +185,17 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
                                  " has returned with error: " + errorMessage);
                 } else {
                     String response = new String(invokeResult.getPayload().array());
+                    if (StringUtils.isNullOrEmpty(response)) {
+                        continue;
+                    }
                     Map<String, Object> responseValues = null;
                     try {
                         responseValues = objectMapper.readValue(response, Map.class);
                     } catch (IOException e) {
                         ExceptionUtil.sneakyThrow(e);
+                    }
+                    if (responseValues == null) {
+                        continue;
                     }
                     String instanceId = (String) responseValues.get("instanceId");
                     String latestRequestTimeStr = (String) responseValues.get("latestRequestTime");
