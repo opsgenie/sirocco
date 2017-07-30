@@ -98,7 +98,7 @@ Here are the sample Lambda functions to be warmed-up:
 
 Sample request and response:
 ``` java
-public class MyAwasomeRequest {
+public class MyAwesomeRequest {
 
     private String requestId;
     private String description;
@@ -109,7 +109,7 @@ public class MyAwasomeRequest {
     
 }    
 
-public class MyAwasomeResponse {
+public class MyAwesomeResponse {
 
     private String responseId;
 
@@ -123,10 +123,10 @@ public class MyAwasomeResponse {
 #### RequestHandler implementation
 
 ``` java
-public class MyAwasomeRequestHandler
-        implements RequestHandler<MyAwasomeRequest, MyAwasomeResponse> {
+public class MyAwesomeRequestHandler
+        implements RequestHandler<MyAwesomeRequest, MyAwesomeResponse> {
 
-    private boolean checkAndHandleWarmupRequest(MyAwasomeRequest request, Context context) {
+    private boolean checkAndHandleWarmupRequest(MyAwesomeRequest request, Context context) {
         // Check whether it is empty request which is used as default warmup request
         if (StringUtils.isNullOrEmpty(request.getRequestId())
             && 
@@ -143,7 +143,7 @@ public class MyAwasomeRequestHandler
     }
 
     @Override
-    public MyAwasomeResponse handleRequest(MyAwasomeRequest request, Context context) {
+    public MyAwesomeResponse handleRequest(MyAwesomeRequest request, Context context) {
         if (!checkAndHandleWarmupRequest(request, context)) {
             return doHandleRequest(request, context);
         } else {
@@ -151,10 +151,10 @@ public class MyAwasomeRequestHandler
         }
     }
 
-    private MyAwasomeResponse doHandleRequest(MyAwasomeRequest request, Context context) {
+    private MyAwesomeResponse doHandleRequest(MyAwesomeRequest request, Context context) {
         // TODO My awesome logic
 
-        return new MyAwasomeResponse().setResponseId(UUID.randomUUID().toString());
+        return new MyAwesomeResponse().setResponseId(UUID.randomUUID().toString());
     }
 
 }
@@ -163,7 +163,7 @@ public class MyAwasomeRequestHandler
 #### RequestStreamHandler implementation
 
 ``` java
-public class MyAwasomeRequestStreamHandler implements RequestStreamHandler {
+public class MyAwesomeRequestStreamHandler implements RequestStreamHandler {
 
     private static final Pattern WARMUP_PATTERN = Pattern.compile("#warmup (wait=(\\d+))?");
 
@@ -210,16 +210,16 @@ public class MyAwasomeRequestStreamHandler implements RequestStreamHandler {
         bis.mark(Integer.MAX_VALUE);
         if (!checkAndHandleWarmupRequest(bis, context)) {
             bis.reset();
-            MyAwasomeRequest request = objectMapper.readValue(bis, MyAwasomeRequest.class);
-            MyAwasomeResponse response = doHandleRequest(request, context);
+            MyAwesomeRequest request = objectMapper.readValue(bis, MyAwesomeRequest.class);
+            MyAwesomeResponse response = doHandleRequest(request, context);
             objectMapper.writeValue(output, response);
         }
     }
 
-    private MyAwasomeResponse doHandleRequest(MyAwasomeRequest request, Context context) {
+    private MyAwesomeResponse doHandleRequest(MyAwesomeRequest request, Context context) {
         // TODO My awesome logic
 
-        return new MyAwasomeResponse().setResponseId(UUID.randomUUID().toString());
+        return new MyAwesomeResponse().setResponseId(UUID.randomUUID().toString());
     }
 
 }
