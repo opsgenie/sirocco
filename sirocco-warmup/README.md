@@ -39,7 +39,11 @@ This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. 
 
 ### Configurations of WarmupHandler
 
-- `sirocco.warmup.function`: `String` typed property prefix that declares warmup functions and their configurations.
+- `sirocco.warmup.function`: `String` typed property prefix that declares functions to warmup and their configurations. Multiple functions and their configurations can be specified with this prefix such as `sirocco.warmup.function1`, `sirocco.warmup.function2`, ... Besides function definition, configuration specification is also supported as key-value after function definition. This property is used in `sirocco.warmup.function...[conf1=val1;conf2=val2;...]` format by appending configurations in key-value (seperated by `=`) after function definition between `[` and `]` characters and seperating each of them by `;` character. Note that configuration part is optional. The following configurations are supported through this property:
+  - `alias`: Configures alias to be used as qualifier while invoking the defined functions with warmup request.
+  - `warmupStrategy`: Configures name of the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation to be used while warming-up the defined function.
+  - `invocationCount`: Configures concurrent invocation count for the defined function to warmup.
+  - `invocationData`: Configures invocation data to be used as invocation request while warming-up the defined function. By default empty message is used.
 - `sirocco.warmup.disableAllDiscoveries`: `Boolean` typed property that disables discovery mechanism for all configurations. Default value is `false`.
 - `sirocco_warmup_warmupAware`: Name of the `Boolean` typed environment variable to be used for discovering Lambda functions to warmup. If a Lambda function wants to be warmed-up, it can publish itself by having this environment variable as enabled (`true`). Then, this handler will assume that this Lambda function want to be warmed-up and will add it to its function list to warmup.
 - `sirocco.warmup.disableWarmupAwareDiscovery`: `Boolean` typed property that disables discovery mechanism for warmup aware functions specified by `com.opsgenie.sirocco.warmup.WarmupHandler#WARMUP_AWARE_ENV_VAR_NAME`. Default value is `false`.
@@ -48,7 +52,7 @@ This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. 
 - `sirocco.warmup.strategy`: `String` typed property that configures name of the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation to be used. Default value is the name of the `com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy`.
 - `sirocco_warmup_warmupStrategy`: `String` typed environment variable to be used for discovering specific warmup strategy name configuration of Lambda functions to warmup.
 - `sirocco.warmup.disableWarmupStrategyDiscovery`: `Boolean` typed property that disables discovery mechanism for warmup strategy name configurations specified by `com.opsgenie.sirocco.warmup.WarmupHandler#WARMUP_STRATEGY_ENV_VAR_NAME`. Default value is `false`.
-- `sirocco.warmup.invocationData`: `String` typed property that configures invocation data to be used as invocation request while warmup. By default empty message is used.
+- `sirocco.warmup.invocationData`: `String` typed property that configures invocation data to be used as invocation request while warming-up. By default empty message is used.
 - `sirocco_warmup_warmupInvocationData`: `String` typed environment variable to be used for discovering specific warmup invocation data configuration of Lambda functions to warmup.
 - `sirocco.warmup.disableWarmupInvocationDataDiscovery`: `Boolean` typed property that disables discovery mechanism for warmup invocation data configurations specified by `com.opsgenie.sirocco.warmup.WarmupHandler#INVOCATION_DATA_ENV_VAR_NAME`. Default value is `false`.
 - `sirocco_warmup_warmupInvocationCount`: `Integer` typed environment variable to be used for discovering specific warmup invocation count configuration of Lambda functions to warmup.
