@@ -27,7 +27,7 @@ This strategy invokes with empty warmup messages if no invocation data is specif
 
 `com.opsgenie.sirocco.warmup.strategy.impl.StatAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes Lambda stats into consideration while warming-up. If the target Lambda function is hot (invoked frequently), it is aimed to keep more instance of that Lambda function up by warmup it with more concurrent invocation. Name of this strategy is `stat-aware`. 
 
-This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. In here `<wait_time>` is the additional delay time for the invoked target Lambda functions to wait before return. In here the startegy itself calculates `<wait_time>` by adding **extra** `100 milliseconds` for every **extra** `10` concurrent warmup invocation count. So, it suggested to wait `100 + <wait_time> milliseconds` for warmup requests at the target Lambda function side.
+This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. In here `<wait_time>` is the additional delay time for the invoked target Lambda functions to wait before return. In here the strategy itself calculates `<wait_time>` by adding **extra** `100 milliseconds` for every **extra** `10` concurrent warmup invocation count. So, it suggested to wait `100 + <wait_time> milliseconds` for warmup requests at the target Lambda function side.
 
 #### StrategyAwareWarmupStrategy
 
@@ -39,7 +39,7 @@ This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. 
 
 ### Configurations of WarmupHandler
 
-- `sirocco.warmup.function`: `String` typed property prefix that declares functions to warmup and their configurations. Multiple functions and their configurations can be specified with this prefix such as `sirocco.warmup.function1`, `sirocco.warmup.function2`, ... Besides function definition, configuration specification is also supported as key-value after function definition. This property is used in `sirocco.warmup.function...[conf1=val1;conf2=val2;...]` format by appending configurations in key-value (seperated by `=`) after function definition between `[` and `]` characters and seperating each of them by `;` character. Note that configuration part is optional. The following configurations are supported through this property:
+- `sirocco.warmup.function`: `String` typed property prefix that declares functions to warmup and their configurations. Multiple functions and their configurations can be specified with this prefix such as `sirocco.warmup.function1`, `sirocco.warmup.function2`, ... Besides function definition, configuration specification is also supported as key-value after function definition. This property is used in `sirocco.warmup.function...[conf1=val1;conf2=val2;...]` format by appending configurations in key-value (separated by `=`) after function definition between `[` and `]` characters and separating each of them by `;` character. Note that configuration part is optional. The following configurations are supported through this property:
   - `alias`: Configures alias to be used as qualifier while invoking the defined functions with warmup request.
   - `warmupStrategy`: Configures name of the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation to be used while warming-up the defined function.
   - `invocationCount`: Configures concurrent invocation count for the defined function to warmup.
