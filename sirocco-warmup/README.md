@@ -132,7 +132,7 @@ public class MyAwasomeRequestHandler
             && 
             StringUtils.isNullOrEmpty(request.getDescription())) {
             context.getLogger().log("Received warmup request as empty message. " +
-                                    "Handling with 100 milliseconds delay ...");
+                                    "Handling with 100 milliseconds delay ...\n");
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -173,7 +173,7 @@ public class MyAwasomeRequestStreamHandler implements RequestStreamHandler {
         // Check whether it is empty request which is used as default warmup request
         if (input.available() <= 3) {
             context.getLogger().log("Received warmup request as empty message. " +
-                                    "Handling with 100 milliseconds delay ...");
+                                    "Handling with 100 milliseconds delay ...\n");
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -193,7 +193,7 @@ public class MyAwasomeRequestStreamHandler implements RequestStreamHandler {
                     delayTime += waitTime;
                 }
                 context.getLogger().log("Received warmup request as warmup message. " +
-                                        "Handling with " + delayTime + " milliseconds delay ...");
+                                        "Handling with " + delayTime + " milliseconds delay ...\n");
                 try {
                     Thread.sleep(delayTime);
                 } catch (InterruptedException e) {
