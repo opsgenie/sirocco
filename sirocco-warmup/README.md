@@ -19,19 +19,23 @@ This handler needs some permissions to do its job.
 
 #### StandardWarmupStrategy
 
-`com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategy` is the standard `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which warmup incrementally as randomized invocation counts for preventing full load on AWS Lambda all the warmup time to leave some AWS Lambda containers free/available for real requests and simulating real environment as much as possible.
- 
+`com.opsgenie.sirocco.warmup.strategy.impl.StandardWarmupStrategy` is the standard `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which warmup incrementally as randomized invocation counts for preventing full load on AWS Lambda all the warmup time to leave some AWS Lambda containers free/available for real requests and simulating real environment as much as possible. Name of this strategy is `standard`.
+
+This strategy invokes with empty warmup messages if no invocation data is specified by `sirocco.warmup.invocationData`. Therefore, the target Lambda functions to warmup must handle empty messages. By default it is suggested to wait `100 milliseconds` for warmup requests before return. This is needed for keeping multiple Lambda containers up. The reason is that when there is no delay, the invoked Lambda container does its job quickly and becomes available to be reused in a very short time. So it is expected that multiple warmup invocations are dispatched to the same Lambda container instead of another one. By waiting before return, warmup request keep Lambda container busy and therefore, possibly the other warmup requests are routed to another containers even create new one if there is no available one. If the concurrent warmup invocation count increases, wait time at target Lambda function side should be increased accordingly as well. Because delay time at target Lambda function side might be insufficient for the required time high number of concurrent warmup invocations to keep containers busy in the meantime. For every `10` concurrent invocation, `100 milliseconds` wait time is reasonable by our experiments.
+
 #### StatAwareWarmupStrategy
 
-`com.opsgenie.sirocco.warmup.strategy.impl.StatAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes Lambda stats into consideration while warmup. If the target Lambda function is hot (invoked frequently), it is aimed to keep more instance of that Lambda function up by warmup it with more concurrent invocation.
- 
+`com.opsgenie.sirocco.warmup.strategy.impl.StatAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes Lambda stats into consideration while warmup. If the target Lambda function is hot (invoked frequently), it is aimed to keep more instance of that Lambda function up by warmup it with more concurrent invocation. Name of this strategy is `stat-aware`. 
+
+This strategy invokes with warmup message in `#warmup wait=<wait_time>` format. In here `<wait_time>` is the additional delay time for the invoked target Lambda functions to wait before return. In here the startegy itself calculates `<wait_time>` by adding **extra** `100 milliseconds` for every **extra** `10` concurrent warmup invocation count. So, it suggested to wait `100 + <wait_time> milliseconds` for warmup requests at the target Lambda function side.
+
 #### StrategyAwareWarmupStrategy
 
-`com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s for functions into consideration while warmup. If there is no configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s, uses given `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` by default.
+`com.opsgenie.sirocco.warmup.strategy.impl.StrategyAwareWarmupStrategy` is the `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` implementation which takes configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s for functions into consideration while warmup. Name of this strategy is `strategy-aware`. If there is no configured/specified `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy`s, uses given `com.opsgenie.sirocco.warmup.strategy.WarmupStrategy` by default. 
 
 ## Configuration
 
-**Note:** Since AWS Lambda environment variable names cannot contain `.` character, `_` character can be used instead for the property names. `_` character is replaced with `.` internally.
+**NOTE:** Since AWS Lambda environment variable names cannot contain `.` character, `_` character can be used instead for the property names. `_` character is replaced with `.` internally.
 
 ### Configurations of WarmupHandler
 
@@ -57,7 +61,7 @@ This handler needs some permissions to do its job.
 - `sirocco.warmup.invocationResultConsumerCount`: `Integer` typed property that configures the count of consumers to get results of warmup invocations. The default value is two times of available CPU processors.
 - `sirocco.warmup.iterationCount`: `Integer` typed property that configures the warmup iteration count. Default value is `2`.
 - `sirocco.warmup.enableSplitIterations`: `Boolean` typed property that enables splitting iterations between multiple schedules of this handler and at each schedule call only one iteration is performed. Default value is `false`.
-- `sirocco.warmup.randomizationBypassInterval`: `Long` typed property that configures the time interval in milliseconds to bypass randomization and directly use invocation count. Default value is `1.800.000` milliseconds (`30` minutes).
+- `sirocco.warmup.randomizationBypassInterval`: `Long` typed property that configures the time interval in milliseconds to bypass randomization and directly use invocation count. Default value is `1.800.000 milliseconds` (`30 minutes`).
 - `sirocco.warmup.disableRandomization`: `Boolean` typed property that disables randomized invocation count behaviour. Note that invocations counts are randomized for preventing full load on AWS Lambda all the warmup time to leave some AWS Lambda containers free/available for real requests and simulating real environment as much as possible. Default value is `false`.
 - `sirocco.warmup.warmupFunctionAlias`: `String` typed property that configures alias to be used as qualifier while invoking Lambda functions to warmup.
 - `sirocco.warmup.throwErrorOnFailure`: `Boolean` typed property that enables throwing error behaviour if the warmup invocation fails for some reason. Default value is `false`.
@@ -65,10 +69,9 @@ This handler needs some permissions to do its job.
 
 ### Configurations of StatAwareWarmupStrategy
 
-- `sirocco.warmup.functionInstanceIdleTime`: `Long` typed property that configures the passed time in milliseconds to consider a Lambda function is idle. Default value is `1.800.000` milliseconds (`30` minutes).
+- `sirocco.warmup.functionInstanceIdleTime`: `Long` typed property that configures the passed time in milliseconds to consider a Lambda function is idle. Default value is `1.800.000 milliseconds` (`30 minutes`).
 
 - `sirocco.warmup.warmupScaleFactor`: `Float` typed property that configures scale factor to increase/decrease Lambda invocation count according to its stat (it is hot or not). Default value is `2.0`.
-
 
 ## Sample Usages
 
@@ -180,7 +183,7 @@ def checkAndHandleWarmupRequest(event):
 
 def lambda_handler(event, context):
     if checkAndHandleWarmupRequest(event):
-        return ''
+        return None
     else:    
         # TODO implement
         return 'Hello from Lambda'
