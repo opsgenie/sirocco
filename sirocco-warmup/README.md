@@ -73,7 +73,7 @@ As mentioned above, this strategy is smart enough to scale up/down warmup invoca
 - `sirocco.warmup.invocationResultConsumerCount`: `Integer` typed property that configures the count of consumers to get results of warmup invocations. The default value is two times of available CPU processors.
 - `sirocco.warmup.iterationCount`: `Integer` typed property that configures the warmup iteration count. Default value is `2`.
 - `sirocco.warmup.enableSplitIterations`: `Boolean` typed property that enables splitting iterations between multiple schedules of this handler and at each schedule call only one iteration is performed. Default value is `false`.
-- `sirocco.warmup.randomizationBypassInterval`: `Long` typed property that configures the time interval in milliseconds to bypass randomization and directly use invocation count. Default value is `1.800.000 milliseconds` (`30 minutes`).
+- `sirocco.warmup.randomizationBypassInterval`: `Long` typed property that configures the time interval in milliseconds to bypass randomization and directly use invocation count. Default value is `900.000 milliseconds` (`15 minutes`).
 - `sirocco.warmup.disableRandomization`: `Boolean` typed property that disables randomized invocation count behaviour. Note that invocations counts are randomized for preventing full load (all containers are busy with warmup invocations) on AWS Lambda during warmup to leave some AWS Lambda containers free/available for real requests and simulating real environment as much as possible. Default value is `false`.
 - `sirocco.warmup.warmupFunctionAlias`: `String` typed property that configures alias to be used as qualifier while invoking Lambda functions to warmup.
 - `sirocco.warmup.throwErrorOnFailure`: `Boolean` typed property that enables throwing error behaviour if the warmup invocation fails for some reason. Default value is `false`.
@@ -82,8 +82,8 @@ As mentioned above, this strategy is smart enough to scale up/down warmup invoca
 ### Configurations of StatAwareWarmupStrategy
 
 - `sirocco.warmup.functionInstanceIdleTime`: `Long` typed property that configures the passed time in milliseconds to consider a Lambda function is idle. Default value is `1.800.000 milliseconds` (`30 minutes`).
-
 - `sirocco.warmup.warmupScaleFactor`: `Float` typed property that configures scale factor to increase/decrease Lambda invocation count according to its stat (it is hot or not). Default value is `2.0`.
+- `sirocco.warmup.disableWarmupScale`: `Boolean` typed property that disables warmup scale behaviour which is enabled by default and scale factor is configured by `sirocco.warmup.warmupScaleFactor` property as mentioned above.
 
 ## Sample Usages
 

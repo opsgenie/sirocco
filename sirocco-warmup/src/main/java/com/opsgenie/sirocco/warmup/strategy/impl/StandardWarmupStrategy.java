@@ -108,9 +108,9 @@ public class StandardWarmupStrategy implements WarmupStrategy {
             "sirocco.warmup.randomizationBypassInterval";
     /**
      * Default value for {@link #RANDOMIZATION_BYPASS_INTERVAL_MILLIS_PROP_NAME} property.
-     * The default value is <code>30 minutes</code>.
+     * The default value is <code>15 minutes</code>.
      */
-    public static final long DEFAULT_RANDOMIZATION_TIMEOUT_MILLIS = 30 * 60 * 1000; // 30 min
+    public static final long DEFAULT_RANDOMIZATION_TIMEOUT_MILLIS = 15 * 60 * 1000; // 15 min
 
     /**
      * Name of the <code>boolean</code> typed property
@@ -307,12 +307,13 @@ public class StandardWarmupStrategy implements WarmupStrategy {
                                 functionToBeWarmup, actualInvocationCount));
                     }
 
+                    InvocationContext invocationContext =
+                            createInvocationContext(functionInfo, functionToBeWarmup, alias, actualInvocationCount);
                     for (int j = 0; j < actualInvocationCount; j++) {
                         if (logger.isDebugEnabled()) {
                             logger.debug(String.format("Invocation round %d ...", (j + 1)));
                         }
-                        InvokeRequest invokeRequest =
-                                createInvokeRequest(functionInfo, functionToBeWarmup, alias, actualInvocationCount);
+                        InvokeRequest invokeRequest = createInvokeRequest(invocationContext, j + 1);
                         Future<InvokeResult> invokeResultFuture = lambdaService.invokeAsync(invokeRequest);
                         invocationResultCounter.incrementAndGet();
                         InvokeResultInfo invokeResultInfo =
@@ -407,23 +408,24 @@ public class StandardWarmupStrategy implements WarmupStrategy {
         return defaultInvocationCount;
     }
 
-    protected InvokeRequest createInvokeRequest(WarmupFunctionInfo functionInfo, String functionName,
-                                                String alias, int actualInvocationCount) {
+    protected InvocationContext createInvocationContext(WarmupFunctionInfo functionInfo, String functionToBeWarmup,
+                                                        String alias, int actualInvocationCount) {
+        return new InvocationContext(functionInfo, alias, functionToBeWarmup, actualInvocationCount);
+    }
+
+    protected InvokeRequest createInvokeRequest(InvocationContext invocationContext, int invocationNo) {
         InvokeRequest invokeRequest =
             new InvokeRequest().
-                    withFunctionName(functionName).
-                    withPayload(
-                            ByteBuffer.wrap(
-                                    createInvokeRequestPayload(functionInfo, functionName, actualInvocationCount)));
-        if (alias != null) {
-            invokeRequest.withQualifier(alias);
+                    withFunctionName(invocationContext.functionToBeWarmup).
+                    withPayload(ByteBuffer.wrap(createInvokeRequestPayload(invocationContext, invocationNo)));
+        if (invocationContext.alias != null) {
+            invokeRequest.withQualifier(invocationContext.alias);
         }
         return invokeRequest;
     }
 
-    protected byte[] createInvokeRequestPayload(WarmupFunctionInfo functionInfo, String functionName,
-                                                int actualInvocationCount) {
-        String invocationData = functionInfo.getInvocationData();
+    protected byte[] createInvokeRequestPayload(InvocationContext invocationContext, int invocationNo) {
+        String invocationData = invocationContext.functionInfo.getInvocationData();
         if (StringUtils.isNullOrEmpty(invocationData)) {
             return new byte[0];
         } else {
@@ -449,6 +451,39 @@ public class StandardWarmupStrategy implements WarmupStrategy {
         } else {
             throw new RuntimeException(errorMessageBuilder.toString());
         }
+    }
+
+    protected static class InvocationContext {
+
+        protected final WarmupFunctionInfo functionInfo;
+        protected final String functionToBeWarmup;
+        protected final String alias;
+        protected final int actualInvocationCount;
+
+        public InvocationContext(WarmupFunctionInfo functionInfo, String functionToBeWarmup,
+                                 String alias, int actualInvocationCount) {
+            this.functionInfo = functionInfo;
+            this.functionToBeWarmup = functionToBeWarmup;
+            this.alias = alias;
+            this.actualInvocationCount = actualInvocationCount;
+        }
+
+        public WarmupFunctionInfo getFunctionInfo() {
+            return functionInfo;
+        }
+
+        public String getFunctionToBeWarmup() {
+            return functionToBeWarmup;
+        }
+
+        public String getAlias() {
+            return alias;
+        }
+
+        public int getActualInvocationCount() {
+            return actualInvocationCount;
+        }
+
     }
 
     protected static class InvokeResultInfo {

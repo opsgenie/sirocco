@@ -90,11 +90,20 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
      */
     public static final float DEFAULT_WARMUP_SCALE_FACTOR = 2.0F;
 
+    /**
+     * Name of the <code>boolean</code> typed property
+     * which disables warmup scale behaviour which is enabled by default
+     * and scale factor is configured by {@link #WARMUP_SCALE_FACTOR_PROP_NAME} property.
+     */
+    public static final String DISABLE_WARMUP_SCALE_PROP_NAME =
+            "sirocco.warmup.disableWarmupScale";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, Map<String, Date>> functionLatestRequestTimeMap =
             new HashMap<String, Map<String, Date>>();
     private final long functionInstanceIdleTime;
     private final float warmupScaleFactor;
+    private final boolean disableWarmupScale;
 
     public StatAwareWarmupStrategy() {
         this(WarmupHandler.DEFAULT_WARMUP_PROPERTY_PROVIDER);
@@ -109,6 +118,8 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
                 warmupPropertyProvider.getFloat(
                         WARMUP_SCALE_FACTOR_PROP_NAME,
                         DEFAULT_WARMUP_SCALE_FACTOR);
+        this.disableWarmupScale =
+                warmupPropertyProvider.getBoolean(DISABLE_WARMUP_SCALE_PROP_NAME);
     }
 
     @Override
@@ -117,19 +128,27 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
     }
 
     @Override
-    protected byte[] createInvokeRequestPayload(WarmupFunctionInfo functionInfo, String functionName,
-                                                int actualInvocationCount) {
+    protected InvocationContext createInvocationContext(WarmupFunctionInfo functionInfo, String functionToBeWarmup,
+                                                        String alias, int actualInvocationCount) {
+        return new StatAwareInvocationContext(functionInfo, functionToBeWarmup, alias, actualInvocationCount);
+    }
+
+    @Override
+    protected byte[] createInvokeRequestPayload(InvocationContext invocationContext, int invocationNo) {
+        int delay = 100 * (invocationContext.actualInvocationCount / 10); // Additional wait time to default one (100 ms)
+        StatAwareInvocationContext statAwareInvocationContext = (StatAwareInvocationContext) invocationContext;
+        if (statAwareInvocationContext.longWarmupInvocationNo == invocationNo) {
+            delay = delay * 10;
+        }
         String controlRequest =
                 new ControlRequestBuilder().
-                        controlRequestType("warmup").
-                        controlRequestArgument(
-                            ControlRequestConstants.WAIT_ARGUMENT,
-                            100 * (actualInvocationCount / 10)). // Additional wait time to default one (100 ms)
+                            controlRequestType("warmup").
+                            controlRequestArgument(ControlRequestConstants.WAIT_ARGUMENT, delay).
                         build();
         return controlRequest.getBytes();
     }
 
-    protected boolean isFunctionInstanceExpired(long currentTime, long latestRequestTime) {
+    private boolean isFunctionInstanceExpired(long currentTime, long latestRequestTime) {
         return currentTime > latestRequestTime + functionInstanceIdleTime;
     }
 
@@ -137,30 +156,36 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
     protected int getInvocationCount(String functionName, int defaultInvocationCount, int configuredInvocationCount,
                                      WarmupFunctionInfo functionInfo) {
         int invocationCount;
-        Map<String, Date> latestRequestTimeMap = functionLatestRequestTimeMap.get(functionName);
-        if (latestRequestTimeMap != null) {
-            long currentTime = System.currentTimeMillis();
-            int activeInstanceCount = 0;
-            Iterator<Date> iter = latestRequestTimeMap.values().iterator();
-            while (iter.hasNext()) {
-                Long latestRequestTime = iter.next().getTime();
-                if (isFunctionInstanceExpired(currentTime, latestRequestTime)) {
-                    iter.remove();
-                } else {
-                    activeInstanceCount++;
-                }
-            }
-            logger.info("Detected active instance count for function " + functionName + ": " + activeInstanceCount);
-            invocationCount =
-                    Math.max(
-                        (int) (activeInstanceCount * warmupScaleFactor),
-                        super.getInvocationCount(functionName, defaultInvocationCount, configuredInvocationCount, functionInfo));
-
-        } else {
+        if (disableWarmupScale) {
             invocationCount =
                     super.getInvocationCount(functionName, defaultInvocationCount, configuredInvocationCount, functionInfo);
+            logger.info(
+                    "Calculated invocation count in standard way for function " + functionName + ": " + invocationCount);
+        } else {
+            Map<String, Date> latestRequestTimeMap = functionLatestRequestTimeMap.get(functionName);
+            if (latestRequestTimeMap != null) {
+                long currentTime = System.currentTimeMillis();
+                int activeInstanceCount = 0;
+                Iterator<Date> iter = latestRequestTimeMap.values().iterator();
+                while (iter.hasNext()) {
+                    Long latestRequestTime = iter.next().getTime();
+                    if (isFunctionInstanceExpired(currentTime, latestRequestTime)) {
+                        iter.remove();
+                    } else {
+                        activeInstanceCount++;
+                    }
+                }
+                logger.info("Detected active instance count for function " + functionName + ": " + activeInstanceCount);
+                invocationCount = Math.max((int) (activeInstanceCount * warmupScaleFactor), 1);
+
+            } else {
+                invocationCount =
+                        super.getInvocationCount(functionName, defaultInvocationCount, configuredInvocationCount, functionInfo);
+            }
+            logger.info(
+                    "Calculated invocation count by taking warmup scale factor into consideration " +
+                    "for function " + functionName + ": " + invocationCount);
         }
-        logger.info("Calculated invocation count for function " + functionName + ": " + invocationCount);
         return invocationCount;
     }
 
@@ -236,6 +261,20 @@ public class StatAwareWarmupStrategy extends StandardWarmupStrategy {
                 }
             }
         }
+    }
+
+    private static class StatAwareInvocationContext extends InvocationContext {
+
+        private static final Random RANDOM = new Random();
+
+        private final int longWarmupInvocationNo;
+
+        public StatAwareInvocationContext(WarmupFunctionInfo functionInfo, String functionToBeWarmup,
+                                          String alias, int actualInvocationCount) {
+            super(functionInfo, functionToBeWarmup, alias, actualInvocationCount);
+            this.longWarmupInvocationNo = 1 + RANDOM.nextInt(actualInvocationCount);
+        }
+
     }
 
 }
