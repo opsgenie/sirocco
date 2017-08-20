@@ -161,6 +161,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
 
     protected final Map<String, Long> functionCallTimes = new HashMap<String, Long>();
     protected final ExecutorService executorService;
+    protected final Random random = new Random();
 
     public StandardWarmupStrategy() {
         this(WarmupHandler.DEFAULT_WARMUP_PROPERTY_PROVIDER);
@@ -226,8 +227,6 @@ public class StandardWarmupStrategy implements WarmupStrategy {
         AtomicBoolean stopFlag = new AtomicBoolean(false);
         List<Future> futures = new ArrayList<>(invocationResultConsumerCount);
 
-        Random random = !disableRandomization ? new Random() : null;
-
         try {
             for (int i = 0; i < invocationResultConsumerCount; i++) {
                 InvocationResultConsumer invocationResultConsumer =
@@ -270,8 +269,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
                     }
                     if (randomize) {
                         actualInvocationCount =
-                                actualInvocationCount - invocationCountPerIteration +
-                                (random.nextInt(invocationCountPerIteration));
+                                calculateRandomizedInvocationCount(actualInvocationCount, invocationCountPerIteration);
                     }
 
                     int functionInvocationCount =
@@ -394,6 +392,12 @@ public class StandardWarmupStrategy implements WarmupStrategy {
                 future.cancel(true);
             }
         }
+    }
+
+    protected int calculateRandomizedInvocationCount(int actualInvocationCount, int invocationCountPerIteration) {
+        return  actualInvocationCount
+                -
+                (random.nextInt(invocationCountPerIteration / 2));
     }
 
     protected int getDefaultInvocationCount() {
