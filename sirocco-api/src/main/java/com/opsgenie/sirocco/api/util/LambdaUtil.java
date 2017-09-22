@@ -7,6 +7,11 @@ package com.opsgenie.sirocco.api.util;
  */
 public final class LambdaUtil {
 
+    /**
+     * Property name which represents embedded wrapped request in <b>JSON</b> format
+     */
+    public static final String WRAPPED_REQUEST_PROP = "___wrappedRequest___";
+
     private LambdaUtil() {
     }
 
