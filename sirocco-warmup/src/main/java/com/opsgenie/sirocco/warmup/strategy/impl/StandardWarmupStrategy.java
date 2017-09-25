@@ -414,7 +414,7 @@ public class StandardWarmupStrategy implements WarmupStrategy {
 
     protected InvocationContext createInvocationContext(WarmupFunctionInfo functionInfo, String functionToBeWarmup,
                                                         String alias, int actualInvocationCount) {
-        return new InvocationContext(functionInfo, alias, functionToBeWarmup, actualInvocationCount);
+        return new InvocationContext(functionInfo, functionToBeWarmup, alias, actualInvocationCount);
     }
 
     protected InvokeRequest createInvokeRequest(InvocationContext invocationContext, int invocationNo) {
